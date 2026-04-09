@@ -13,7 +13,9 @@ const Index = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const { user, signOut } = useAuth();
+  const { user, loading, signOut } = useAuth();
+
+  const displayName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Driver";
 
   const scrollToBottom = () => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -87,7 +89,9 @@ const Index = () => {
         </div>
         <div className="flex-1">
           <h2 className="text-sm font-semibold text-foreground leading-tight">CarsGPT</h2>
-          <p className="text-xs text-muted-foreground">Your beginner car guide</p>
+          <p className="text-xs text-muted-foreground">
+            {user ? `Hey ${displayName} 👋` : "Your beginner car guide"}
+          </p>
         </div>
         <div className="flex items-center gap-2">
           {user && (
@@ -105,12 +109,11 @@ const Index = () => {
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
             >
               <LogOut className="w-3.5 h-3.5" />
-              Sign out
             </button>
           ) : (
             <Link
               to="/auth"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-primary hover:bg-secondary transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
             >
               <LogIn className="w-3.5 h-3.5" />
               Sign in
@@ -126,10 +129,10 @@ const Index = () => {
             {messages.map((m, i) => (
               <ChatMessage key={i} role={m.role} content={m.content} />
             ))}
-            {isLoading && getMessageText(messages[messages.length - 1]?.content) && messages[messages.length - 1]?.role === "user" && <TypingIndicator />}
+            {isLoading && messages[messages.length - 1]?.role === "user" && <TypingIndicator />}
           </div>
         ) : (
-          <WelcomeScreen onSuggestionClick={(text) => send(text)} />
+          <WelcomeScreen onSuggestionClick={(text) => send(text)} userName={user ? displayName : undefined} />
         )}
       </div>
 

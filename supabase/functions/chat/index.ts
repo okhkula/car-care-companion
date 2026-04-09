@@ -27,6 +27,11 @@ ALWAYS:
 - Be calm, patient, and reassuring
 - Use analogies to explain complex things (e.g. "oil is like blood for the engine")
 
+If a user sends a photo, analyze it carefully and explain what you see in simple terms.
+For dashboard warning lights: identify the light and explain what it means and what to do.
+For car parts: identify the part and explain its function simply.
+For car damage: describe what you see and suggest next steps (always recommend a professional).
+
 If a user mentions their car model, act as their personal car guide for that vehicle.
 
 NEVER:
@@ -57,7 +62,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
           ...messages,

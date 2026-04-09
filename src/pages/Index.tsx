@@ -1,15 +1,19 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { toast } from "sonner";
+import { Link } from "react-router-dom";
+import { ImageIcon, LogOut, LogIn } from "lucide-react";
 import ChatMessage from "@/components/ChatMessage";
 import ChatInput from "@/components/ChatInput";
 import TypingIndicator from "@/components/TypingIndicator";
 import WelcomeScreen from "@/components/WelcomeScreen";
-import { Message, streamChat } from "@/lib/chat";
+import { Message, MessageContent, streamChat, getMessageText } from "@/lib/chat";
+import { useAuth } from "@/hooks/useAuth";
 
 const Index = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const { user, signOut } = useAuth();
 
   const scrollToBottom = () => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -20,9 +24,23 @@ const Index = () => {
   }, [messages, isLoading]);
 
   const send = useCallback(
-    async (input: string) => {
+    async (input: string, imageUrls?: string[]) => {
       if (isLoading) return;
-      const userMsg: Message = { role: "user", content: input };
+
+      let content: MessageContent;
+      if (imageUrls && imageUrls.length > 0) {
+        content = [
+          { type: "text" as const, text: input },
+          ...imageUrls.map((url) => ({
+            type: "image_url" as const,
+            image_url: { url },
+          })),
+        ];
+      } else {
+        content = input;
+      }
+
+      const userMsg: Message = { role: "user", content };
       const updatedMessages = [...messages, userMsg];
       setMessages(updatedMessages);
       setIsLoading(true);
@@ -67,9 +85,37 @@ const Index = () => {
         <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
           <span className="text-primary-foreground text-sm font-bold">🚗</span>
         </div>
-        <div>
+        <div className="flex-1">
           <h2 className="text-sm font-semibold text-foreground leading-tight">CarsGPT</h2>
           <p className="text-xs text-muted-foreground">Your beginner car guide</p>
+        </div>
+        <div className="flex items-center gap-2">
+          {user && (
+            <Link
+              to="/gallery"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+            >
+              <ImageIcon className="w-3.5 h-3.5" />
+              Gallery
+            </Link>
+          )}
+          {user ? (
+            <button
+              onClick={signOut}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              Sign out
+            </button>
+          ) : (
+            <Link
+              to="/auth"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-primary hover:bg-secondary transition-colors"
+            >
+              <LogIn className="w-3.5 h-3.5" />
+              Sign in
+            </Link>
+          )}
         </div>
       </header>
 
@@ -80,10 +126,10 @@ const Index = () => {
             {messages.map((m, i) => (
               <ChatMessage key={i} role={m.role} content={m.content} />
             ))}
-            {isLoading && messages[messages.length - 1]?.role === "user" && <TypingIndicator />}
+            {isLoading && getMessageText(messages[messages.length - 1]?.content) && messages[messages.length - 1]?.role === "user" && <TypingIndicator />}
           </div>
         ) : (
-          <WelcomeScreen onSuggestionClick={send} />
+          <WelcomeScreen onSuggestionClick={(text) => send(text)} />
         )}
       </div>
 

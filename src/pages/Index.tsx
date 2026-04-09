@@ -1,19 +1,21 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
-import { ImageIcon, LogOut, LogIn } from "lucide-react";
+import { ImageIcon, LogOut, LogIn, Car } from "lucide-react";
 import ChatMessage from "@/components/ChatMessage";
 import ChatInput from "@/components/ChatInput";
 import TypingIndicator from "@/components/TypingIndicator";
 import WelcomeScreen from "@/components/WelcomeScreen";
-import { Message, MessageContent, streamChat, getMessageText } from "@/lib/chat";
+import { Message, MessageContent, streamChat } from "@/lib/chat";
 import { useAuth } from "@/hooks/useAuth";
+import { useUserCars, buildCarContext } from "@/hooks/useUserCars";
 
 const Index = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const { user, loading, signOut } = useAuth();
+  const { user, signOut } = useAuth();
+  const userCars = useUserCars();
 
   const displayName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Driver";
 
@@ -47,6 +49,12 @@ const Index = () => {
       setMessages(updatedMessages);
       setIsLoading(true);
 
+      // Inject car context as a system-like user message for the first message
+      const carContext = buildCarContext(userCars);
+      const messagesForApi = carContext && updatedMessages.length === 1
+        ? [{ role: "user" as const, content: `[Context: ${carContext}]\n\n${typeof content === "string" ? content : input}` } as Message]
+        : updatedMessages;
+
       let assistantContent = "";
 
       const upsert = (chunk: string) => {
@@ -62,7 +70,7 @@ const Index = () => {
 
       try {
         await streamChat({
-          messages: updatedMessages,
+          messages: messagesForApi,
           onDelta: upsert,
           onDone: () => setIsLoading(false),
           onError: (err) => {
@@ -75,7 +83,7 @@ const Index = () => {
         setIsLoading(false);
       }
     },
-    [messages, isLoading]
+    [messages, isLoading, userCars]
   );
 
   const hasMessages = messages.length > 0;
@@ -93,20 +101,29 @@ const Index = () => {
             {user ? `Hey ${displayName} 👋` : "Your beginner car guide"}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           {user && (
-            <Link
-              to="/gallery"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
-            >
-              <ImageIcon className="w-3.5 h-3.5" />
-              Gallery
-            </Link>
+            <>
+              <Link
+                to="/my-car"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+              >
+                <Car className="w-3.5 h-3.5" />
+                My Car{userCars.length > 0 && <span className="ml-0.5 px-1.5 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-medium">{userCars.length}</span>}
+              </Link>
+              <Link
+                to="/gallery"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+              >
+                <ImageIcon className="w-3.5 h-3.5" />
+                Gallery
+              </Link>
+            </>
           )}
           {user ? (
             <button
               onClick={signOut}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
             >
               <LogOut className="w-3.5 h-3.5" />
             </button>
@@ -132,7 +149,11 @@ const Index = () => {
             {isLoading && messages[messages.length - 1]?.role === "user" && <TypingIndicator />}
           </div>
         ) : (
-          <WelcomeScreen onSuggestionClick={(text) => send(text)} userName={user ? displayName : undefined} />
+          <WelcomeScreen
+            onSuggestionClick={(text) => send(text)}
+            userName={user ? displayName : undefined}
+            userCars={userCars}
+          />
         )}
       </div>
 

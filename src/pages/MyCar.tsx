@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { ArrowLeft, Car, Plus, Trash2, Edit2, Save, X, Gauge } from "lucide-react";
+import MaintenanceReminders from "@/components/MaintenanceReminders";
 
 interface UserCar {
   id: string;
@@ -214,41 +215,48 @@ const MyCar = () => {
           </div>
         ) : (
           cars.map((car) => (
-            <div key={car.id} className="rounded-xl border border-border bg-card p-4 animate-fade-in-up">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <Car className="w-5 h-5 text-primary" />
+            <div key={car.id} className="space-y-3">
+              <div className="rounded-xl border border-border bg-card p-4 animate-fade-in-up">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <Car className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-semibold text-foreground">
+                        {car.year} {car.make} {car.model}
+                      </h3>
+                      {car.nickname && (
+                        <p className="text-xs text-muted-foreground">"{car.nickname}"</p>
+                      )}
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-sm font-semibold text-foreground">
-                      {car.year} {car.make} {car.model}
-                    </h3>
-                    {car.nickname && (
-                      <p className="text-xs text-muted-foreground">"{car.nickname}"</p>
-                    )}
+                  <div className="flex items-center gap-1">
+                    <button onClick={() => handleEdit(car)} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors">
+                      <Edit2 className="w-3.5 h-3.5" />
+                    </button>
+                    <button onClick={() => handleDelete(car.id)} className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 </div>
-                <div className="flex items-center gap-1">
-                  <button onClick={() => handleEdit(car)} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors">
-                    <Edit2 className="w-3.5 h-3.5" />
-                  </button>
-                  <button onClick={() => handleDelete(car.id)} className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors">
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {car.color && (
+                    <span className="text-xs px-2 py-1 rounded-md bg-secondary text-secondary-foreground">{car.color}</span>
+                  )}
+                  {car.mileage && (
+                    <span className="text-xs px-2 py-1 rounded-md bg-secondary text-secondary-foreground flex items-center gap-1">
+                      <Gauge className="w-3 h-3" /> {car.mileage.toLocaleString()} mi
+                    </span>
+                  )}
                 </div>
+                {car.notes && <p className="text-xs text-muted-foreground mt-2">{car.notes}</p>}
               </div>
-              <div className="flex flex-wrap gap-2 mt-3">
-                {car.color && (
-                  <span className="text-xs px-2 py-1 rounded-md bg-secondary text-secondary-foreground">{car.color}</span>
-                )}
-                {car.mileage && (
-                  <span className="text-xs px-2 py-1 rounded-md bg-secondary text-secondary-foreground flex items-center gap-1">
-                    <Gauge className="w-3 h-3" /> {car.mileage.toLocaleString()} mi
-                  </span>
-                )}
-              </div>
-              {car.notes && <p className="text-xs text-muted-foreground mt-2">{car.notes}</p>}
+              <MaintenanceReminders
+                carId={car.id}
+                carMileage={car.mileage}
+                carName={`${car.year} ${car.make} ${car.model}`}
+              />
             </div>
           ))
         )}

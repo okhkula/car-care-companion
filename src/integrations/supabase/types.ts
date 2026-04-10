@@ -47,6 +47,56 @@ export type Database = {
         }
         Relationships: []
       }
+      maintenance_reminders: {
+        Row: {
+          car_id: string
+          created_at: string
+          id: string
+          interval_miles: number
+          is_completed: boolean
+          last_done_mileage: number
+          next_due_mileage: number
+          notes: string | null
+          service_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          car_id: string
+          created_at?: string
+          id?: string
+          interval_miles: number
+          is_completed?: boolean
+          last_done_mileage?: number
+          next_due_mileage: number
+          notes?: string | null
+          service_type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          car_id?: string
+          created_at?: string
+          id?: string
+          interval_miles?: number
+          is_completed?: boolean
+          last_done_mileage?: number
+          next_due_mileage?: number
+          notes?: string | null
+          service_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_reminders_car_id_fkey"
+            columns: ["car_id"]
+            isOneToOne: false
+            referencedRelation: "user_cars"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null

@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { ArrowLeft, Car, Plus, Trash2, Edit2, Save, X, Gauge } from "lucide-react";
+import MaintenanceReminders from "@/components/MaintenanceReminders";
 
 interface UserCar {
   id: string;

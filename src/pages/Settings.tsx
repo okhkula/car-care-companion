@@ -38,10 +38,17 @@ const defaultPrefs: UserPreferences = {
   enableSoundEffects: false,
 };
 
+/** Apply theme class to document */
+const applyTheme = (theme: ThemeMode) => {
+  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const isDark = theme === "dark" || (theme === "system" && prefersDark);
+  document.documentElement.classList.toggle("dark", isDark);
+};
+
 const savePrefs = (prefs: UserPreferences) => {
   localStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
-  // Keep legacy key in sync for the chat toggle
   localStorage.setItem("carsgpt-response-mode", prefs.responseMode);
+  applyTheme(prefs.theme);
 };
 
 const Settings = () => {
@@ -125,6 +132,32 @@ const Settings = () => {
             <div>
               <label className="text-xs font-medium text-muted-foreground block">Email</label>
               <p className="text-sm text-foreground mt-0.5">{user.email}</p>
+            </div>
+          </div>
+        </section>
+
+        {/* Appearance */}
+        <section className="space-y-4">
+          <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Appearance</h2>
+          <div className="rounded-xl border border-border bg-card p-4 flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-medium text-foreground">Theme</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Choose light, dark, or match your system setting.</p>
+            </div>
+            <div className="flex rounded-lg border border-input overflow-hidden flex-shrink-0">
+              {(["light", "dark", "system"] as ThemeMode[]).map((mode) => (
+                <button
+                  key={mode}
+                  onClick={() => updatePref("theme", mode)}
+                  className={`px-3 py-1.5 text-xs font-medium capitalize transition-colors ${
+                    prefs.theme === mode
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-background text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {mode === "light" ? "☀️ Light" : mode === "dark" ? "🌙 Dark" : "💻 System"}
+                </button>
+              ))}
             </div>
           </div>
         </section>

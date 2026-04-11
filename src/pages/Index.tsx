@@ -7,7 +7,7 @@ import ChatInput from "@/components/ChatInput";
 import ChatHistory from "@/components/ChatHistory";
 import TypingIndicator from "@/components/TypingIndicator";
 import WelcomeScreen from "@/components/WelcomeScreen";
-import { Message, MessageContent, streamChat } from "@/lib/chat";
+import { Message, MessageContent, ResponseMode, streamChat } from "@/lib/chat";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserCars, buildCarContext } from "@/hooks/useUserCars";
 import { useConversations } from "@/hooks/useConversations";
@@ -15,6 +15,9 @@ import { useConversations } from "@/hooks/useConversations";
 const Index = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [responseMode, setResponseMode] = useState<ResponseMode>(() => {
+    return (localStorage.getItem("carsgpt-response-mode") as ResponseMode) || "brief";
+  });
   const scrollRef = useRef<HTMLDivElement>(null);
   const { user, signOut } = useAuth();
   const userCars = useUserCars();
@@ -92,6 +95,7 @@ const Index = () => {
       try {
         await streamChat({
           messages: messagesForApi,
+          responseMode,
           onDelta: upsert,
           onDone: async () => {
             setIsLoading(false);
@@ -111,7 +115,7 @@ const Index = () => {
         setIsLoading(false);
       }
     },
-    [messages, isLoading, userCars, user, activeId, saveMessage, setMessages, fetchConversations]
+    [messages, isLoading, userCars, user, activeId, saveMessage, setMessages, fetchConversations, responseMode]
   );
 
   const handleSelectConversation = (id: string) => {

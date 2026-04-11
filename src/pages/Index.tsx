@@ -221,12 +221,21 @@ const Index = () => {
               </>
             )}
             {user ? (
-              <button
-                onClick={signOut}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
-              >
-                <LogOut className="w-3.5 h-3.5" />
-              </button>
+              <>
+                <Link
+                  to="/settings"
+                  className="flex items-center justify-center w-8 h-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                  title="Settings"
+                >
+                  <Settings className="w-3.5 h-3.5" />
+                </Link>
+                <button
+                  onClick={signOut}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                </button>
+              </>
             ) : (
               <Link
                 to="/auth"

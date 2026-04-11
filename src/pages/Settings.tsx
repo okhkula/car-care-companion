@@ -7,8 +7,11 @@ import { supabase } from "@/integrations/supabase/client";
 import type { ResponseMode } from "@/lib/chat";
 
 /** All user preferences stored in localStorage */
+type ThemeMode = "light" | "dark" | "system";
+
 interface UserPreferences {
   responseMode: ResponseMode;
+  theme: ThemeMode;
   showWelcomeSuggestions: boolean;
   enableSoundEffects: boolean;
 }
@@ -30,6 +33,7 @@ const loadPrefs = (): UserPreferences => {
 
 const defaultPrefs: UserPreferences = {
   responseMode: "brief",
+  theme: "system",
   showWelcomeSuggestions: true,
   enableSoundEffects: false,
 };

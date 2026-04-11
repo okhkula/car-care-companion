@@ -186,6 +186,22 @@ const Index = () => {
             </p>
           </div>
           <div className="flex items-center gap-1">
+            <button
+              onClick={() => {
+                const next = responseMode === "brief" ? "detailed" : "brief";
+                setResponseMode(next);
+                localStorage.setItem("carsgpt-response-mode", next);
+                toast.success(`Switched to ${next} mode`);
+              }}
+              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                responseMode === "detailed"
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+              }`}
+              title={responseMode === "brief" ? "Switch to detailed answers" : "Switch to brief answers"}
+            >
+              {responseMode === "brief" ? "⚡ Brief" : "📖 Detailed"}
+            </button>
             {user && (
               <>
                 <Link

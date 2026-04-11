@@ -4,13 +4,17 @@ export type Message = { role: "user" | "assistant"; content: MessageContent };
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
 
+export type ResponseMode = "brief" | "detailed";
+
 export async function streamChat({
   messages,
+  responseMode = "brief",
   onDelta,
   onDone,
   onError,
 }: {
   messages: Message[];
+  responseMode?: ResponseMode;
   onDelta: (text: string) => void;
   onDone: () => void;
   onError: (error: string) => void;
@@ -21,7 +25,7 @@ export async function streamChat({
       "Content-Type": "application/json",
       Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
     },
-    body: JSON.stringify({ messages }),
+    body: JSON.stringify({ messages, responseMode }),
   });
 
   if (!resp.ok) {

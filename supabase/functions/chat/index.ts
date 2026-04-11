@@ -49,7 +49,10 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { messages } = await req.json();
+    const { messages, responseMode } = await req.json();
+    const modeInstruction = responseMode === "detailed"
+      ? "\n\nThe user has selected DETAILED mode. Give thorough, in-depth answers with full explanations, examples, and context. Use paragraphs and be comprehensive."
+      : "\n\nThe user has selected BRIEF mode. Keep answers SHORT (2-4 sentences). Lead with the direct answer. Use bullet points for lists.";
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
@@ -62,7 +65,7 @@ serve(async (req) => {
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
         messages: [
-          { role: "system", content: SYSTEM_PROMPT },
+          { role: "system", content: SYSTEM_PROMPT + modeInstruction },
           ...messages,
         ],
         stream: true,

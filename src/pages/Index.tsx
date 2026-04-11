@@ -7,7 +7,7 @@ import ChatInput from "@/components/ChatInput";
 import ChatHistory from "@/components/ChatHistory";
 import TypingIndicator from "@/components/TypingIndicator";
 import WelcomeScreen from "@/components/WelcomeScreen";
-import { Message, MessageContent, streamChat } from "@/lib/chat";
+import { Message, MessageContent, ResponseMode, streamChat } from "@/lib/chat";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserCars, buildCarContext } from "@/hooks/useUserCars";
 import { useConversations } from "@/hooks/useConversations";
@@ -15,6 +15,9 @@ import { useConversations } from "@/hooks/useConversations";
 const Index = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [responseMode, setResponseMode] = useState<ResponseMode>(() => {
+    return (localStorage.getItem("carsgpt-response-mode") as ResponseMode) || "brief";
+  });
   const scrollRef = useRef<HTMLDivElement>(null);
   const { user, signOut } = useAuth();
   const userCars = useUserCars();
@@ -92,6 +95,7 @@ const Index = () => {
       try {
         await streamChat({
           messages: messagesForApi,
+          responseMode,
           onDelta: upsert,
           onDone: async () => {
             setIsLoading(false);
@@ -111,7 +115,7 @@ const Index = () => {
         setIsLoading(false);
       }
     },
-    [messages, isLoading, userCars, user, activeId, saveMessage, setMessages, fetchConversations]
+    [messages, isLoading, userCars, user, activeId, saveMessage, setMessages, fetchConversations, responseMode]
   );
 
   const handleSelectConversation = (id: string) => {
@@ -182,6 +186,22 @@ const Index = () => {
             </p>
           </div>
           <div className="flex items-center gap-1">
+            <button
+              onClick={() => {
+                const next = responseMode === "brief" ? "detailed" : "brief";
+                setResponseMode(next);
+                localStorage.setItem("carsgpt-response-mode", next);
+                toast.success(`Switched to ${next} mode`);
+              }}
+              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                responseMode === "detailed"
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+              }`}
+              title={responseMode === "brief" ? "Switch to detailed answers" : "Switch to brief answers"}
+            >
+              {responseMode === "brief" ? "⚡ Brief" : "📖 Detailed"}
+            </button>
             {user && (
               <>
                 <Link

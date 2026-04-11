@@ -9,6 +9,7 @@ import Auth from "./pages/Auth.tsx";
 import Gallery from "./pages/Gallery.tsx";
 import MyCar from "./pages/MyCar.tsx";
 import NotFound from "./pages/NotFound.tsx";
+import Settings from "./pages/Settings.tsx";
 
 const queryClient = new QueryClient();
 
@@ -24,6 +25,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/gallery" element={<Gallery />} />
             <Route path="/my-car" element={<MyCar />} />
+            <Route path="/settings" element={<Settings />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

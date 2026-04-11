@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
-import { ImageIcon, LogOut, LogIn, Car, History, X } from "lucide-react";
+import { ImageIcon, LogOut, LogIn, Car, History, Settings } from "lucide-react";
 import ChatMessage from "@/components/ChatMessage";
 import ChatInput from "@/components/ChatInput";
 import ChatHistory from "@/components/ChatHistory";

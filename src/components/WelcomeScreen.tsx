@@ -82,6 +82,8 @@ const WelcomeScreen = ({ onSuggestionClick, userName, userCars = [] }: WelcomeSc
           </button>
         ))}
       </div>
+
+      <TipOfTheDay />
     </div>
   );
 };

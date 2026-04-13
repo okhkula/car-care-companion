@@ -1,5 +1,6 @@
 import { Car, Wrench, Gauge, ParkingCircle } from "lucide-react";
 import { Link } from "react-router-dom";
+import TipOfTheDay from "./TipOfTheDay";
 
 interface UserCarBasic {
   make: string;
@@ -81,6 +82,8 @@ const WelcomeScreen = ({ onSuggestionClick, userName, userCars = [] }: WelcomeSc
           </button>
         ))}
       </div>
+
+      <TipOfTheDay />
     </div>
   );
 };

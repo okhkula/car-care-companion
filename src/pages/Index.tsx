@@ -7,10 +7,12 @@ import ChatInput from "@/components/ChatInput";
 import ChatHistory from "@/components/ChatHistory";
 import TypingIndicator from "@/components/TypingIndicator";
 import WelcomeScreen from "@/components/WelcomeScreen";
+import OverdueBanner from "@/components/OverdueBanner";
 import { Message, MessageContent, ResponseMode, streamChat } from "@/lib/chat";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserCars, buildCarContext } from "@/hooks/useUserCars";
 import { useConversations } from "@/hooks/useConversations";
+import { useOverdueReminders } from "@/hooks/useOverdueReminders";
 
 const Index = () => {
   const [isLoading, setIsLoading] = useState(false);

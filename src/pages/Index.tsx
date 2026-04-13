@@ -251,6 +251,11 @@ const Index = () => {
           </div>
         </header>
 
+        {/* Overdue maintenance banner */}
+        {user && overdueReminders.length > 0 && !hasMessages && (
+          <OverdueBanner reminders={overdueReminders} />
+        )}
+
         {/* Messages area */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto scrollbar-thin">
           {loadingHistory ? (

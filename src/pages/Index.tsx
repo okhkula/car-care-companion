@@ -23,6 +23,7 @@ const Index = () => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const { user, signOut } = useAuth();
   const userCars = useUserCars();
+  const { overdue: overdueReminders } = useOverdueReminders();
 
   const {
     conversations,

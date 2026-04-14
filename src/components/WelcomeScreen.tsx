@@ -1,6 +1,8 @@
-import { Car, Wrench, Gauge, ParkingCircle } from "lucide-react";
+import { useState } from "react";
+import { Car, Wrench, Gauge, ParkingCircle, MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
 import TipOfTheDay from "./TipOfTheDay";
+import NearbyPlaces from "./NearbyPlaces";
 
 interface UserCarBasic {
   make: string;

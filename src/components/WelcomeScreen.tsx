@@ -1,6 +1,8 @@
-import { Car, Wrench, Gauge, ParkingCircle } from "lucide-react";
+import { useState } from "react";
+import { Car, Wrench, Gauge, ParkingCircle, MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
 import TipOfTheDay from "./TipOfTheDay";
+import NearbyPlaces from "./NearbyPlaces";
 
 interface UserCarBasic {
   make: string;
@@ -23,6 +25,7 @@ const defaultSuggestions = [
 ];
 
 const WelcomeScreen = ({ onSuggestionClick, userName, userCars = [] }: WelcomeScreenProps) => {
+  const [showNearby, setShowNearby] = useState(false);
   const hasCars = userCars.length > 0;
   const firstCar = userCars[0];
 
@@ -67,6 +70,26 @@ const WelcomeScreen = ({ onSuggestionClick, userName, userCars = [] }: WelcomeSc
               {car.nickname || `${car.year} ${car.make} ${car.model}`}
             </span>
           ))}
+        </div>
+      )}
+
+      {/* Nearby Places button */}
+      <button
+        onClick={() => setShowNearby(!showNearby)}
+        className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-medium transition-colors mb-4 ${
+          showNearby
+            ? "border-primary bg-primary/10 text-primary"
+            : "border-border bg-card text-foreground hover:bg-secondary"
+        }`}
+      >
+        <MapPin className="w-4 h-4" />
+        Find Nearby Car Services
+      </button>
+
+      {/* Nearby Places panel */}
+      {showNearby && (
+        <div className="w-full max-w-md mb-6 animate-fade-in-up">
+          <NearbyPlaces />
         </div>
       )}
 

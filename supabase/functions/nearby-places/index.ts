@@ -83,8 +83,7 @@ Deno.serve(async (req) => {
           'places.rating',
           'places.userRatingCount',
           'places.currentOpeningHours.openNow',
-avoid          ,
-        ].filter(Boolean).join(','),
+        ].join(','),
       },
       body: JSON.stringify(requestBody),
     });

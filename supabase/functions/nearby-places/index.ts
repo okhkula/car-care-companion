@@ -1,128 +1,104 @@
-import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const GATEWAY_URL = 'https://connector-gateway.lovable.dev/google_maps';
-
-// Maps our app categories to Google Places types / text queries
-const categorySearch: Record<string, { types?: string[]; textQuery?: string }> = {
-  gas: { types: ['gas_station'] },
-  gas_station: { types: ['gas_station'] },
-  garage: { types: ['car_repair'] },
-  repair: { types: ['car_repair'] },
-  accessories: { types: ['auto_parts_store'] },
-  parts: { types: ['auto_parts_store'] },
-  licensing: { textQuery: 'vehicle licensing and registration center' },
-  registration: { textQuery: 'vehicle licensing and registration center' },
-  showroom: { types: ['car_dealer'] },
-  dealer: { types: ['car_dealer'] },
-  parking: { types: ['parking'] },
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+// Map our category keys to Google Places API types
+const categoryTypeMap: Record<string, { types: string[]; keyword?: string }> = {
+  gas_station: { types: ["gas_station"], keyword: "gas station fuel" },
+  garage: { types: ["car_repair"], keyword: "auto repair mechanic garage" },
+  car_accessories: { types: ["car_repair", "store"], keyword: "car accessories auto parts" },
+  licensing: { types: ["local_government_office"], keyword: "vehicle registration licensing DMV" },
+  showroom: { types: ["car_dealer"], keyword: "car dealership showroom" },
+  parking: { types: ["parking"], keyword: "parking lot garage" },
+};
+
+const categoryLabels: Record<string, string> = {
+  gas_station: "Gas Stations",
+  garage: "Garages & Mechanics",
+  car_accessories: "Car Accessory Stores",
+  licensing: "Vehicle Licensing & Registration",
+  showroom: "Car Showrooms & Dealers",
+  parking: "Parking Options",
+};
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    const GOOGLE_MAPS_API_KEY = Deno.env.get('GOOGLE_MAPS_API_KEY');
-    if (!LOVABLE_API_KEY || !GOOGLE_MAPS_API_KEY) {
+    const { latitude, longitude, category, radius = 5000 } = await req.json();
+
+    if (!latitude || !longitude || !category) {
       return new Response(
-        JSON.stringify({ error: 'Google Maps connection is not configured.' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        JSON.stringify({ error: "Missing latitude, longitude, or category" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const body = await req.json().catch(() => ({}));
-    const latitude = Number(body?.latitude);
-    const longitude = Number(body?.longitude);
-    const category = String(body?.category ?? 'gas');
-    // Keep the radius sensible to control cost (500 m - 20 km)
-    const radius = Math.min(Math.max(Number(body?.radius) || 5000, 500), 20000);
-
-    const isValidCoordinate =
-      Number.isFinite(latitude) && Math.abs(latitude) <= 90 &&
-      Number.isFinite(longitude) && Math.abs(longitude) <= 180;
-
-    if (!isValidCoordinate) {
+    const categoryConfig = categoryTypeMap[category];
+    if (!categoryConfig) {
       return new Response(
-        JSON.stringify({ error: 'A valid latitude and longitude are required.' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        JSON.stringify({ error: "Invalid category" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const search = categorySearch[category] ?? { textQuery: `${category} near me` };
+    const apiKey = Deno.env.get("GOOGLE_PLACES_API_KEY");
+    if (!apiKey) {
+      return new Response(
+        JSON.stringify({ error: "GOOGLE_PLACES_API_KEY is not configured" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
-    const useTextSearch = Boolean(search.textQuery);
-    const endpoint = useTextSearch
-      ? `${GATEWAY_URL}/places/v1/places:searchText`
-      : `${GATEWAY_URL}/places/v1/places:searchNearby`;
+    // Use Google Places Nearby Search (legacy endpoint, widely available)
+    const type = categoryConfig.types[0];
+    const keyword = categoryConfig.keyword || "";
+    const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latitude},${longitude}&radius=${radius}&type=${type}&keyword=${encodeURIComponent(keyword)}&key=${apiKey}`;
 
-    const requestBody = useTextSearch
-      ? {
-          textQuery: search.textQuery,
-          pageSize: 12,
-          locationBias: { circle: { center: { latitude, longitude }, radius } },
-        }
-      : {
-          includedTypes: search.types,
-          maxResultCount: 12,
-          locationRestriction: { circle: { center: { latitude, longitude }, radius } },
-        };
+    const placesResp = await fetch(url);
+    const placesData = await placesResp.json();
 
-    const googleResponse = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        'X-Connection-Api-Key': GOOGLE_MAPS_API_KEY,
-        'Content-Type': 'application/json',
-        'X-Goog-FieldMask': [
-          'places.id',
-          'places.displayName',
-          'places.formattedAddress',
-          'places.location',
-          'places.rating',
-          'places.userRatingCount',
-          'places.currentOpeningHours.openNow',
-        ].join(','),
+    if (placesData.status !== "OK" && placesData.status !== "ZERO_RESULTS") {
+      console.error("Google Places error:", placesData.status, placesData.error_message);
+      return new Response(
+        JSON.stringify({ error: `Places API error: ${placesData.status}` }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const results = (placesData.results || []).slice(0, 10).map((place: any) => ({
+      name: place.name,
+      address: place.vicinity || place.formatted_address || "",
+      rating: place.rating || null,
+      totalRatings: place.user_ratings_total || 0,
+      isOpen: place.opening_hours?.open_now ?? null,
+      priceLevel: place.price_level ?? null,
+      location: {
+        lat: place.geometry?.location?.lat,
+        lng: place.geometry?.location?.lng,
       },
-      body: JSON.stringify(requestBody),
-    });
-
-    if (!googleResponse.ok) {
-      const errorBody = await googleResponse.text();
-      console.error(`Places request failed [${googleResponse.status}]: ${errorBody}`);
-      return new Response(
-        JSON.stringify({ error: 'Could not load nearby places right now.', status: googleResponse.status, details: errorBody }),
-        { status: googleResponse.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
-      );
-    }
-
-    const data = await googleResponse.json();
-
-    const places = (data.places ?? []).map((place: any) => ({
-      id: place.id,
-      placeId: place.id,
-      name: place.displayName?.text ?? 'Unknown place',
-      address: place.formattedAddress ?? '',
-      vicinity: place.formattedAddress ?? '',
-      rating: place.rating ?? null,
-      userRatingCount: place.userRatingCount ?? null,
-      openNow: place.currentOpeningHours?.openNow ?? null,
-      location: place.location ?? null,
-      mapsUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-        place.displayName?.text ?? '',
-      )}&query_place_id=${place.id}`,
+      placeId: place.place_id,
     }));
 
-    return new Response(JSON.stringify({ places, results: places }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 200,
-    });
-  } catch (error) {
-    console.error('nearby-places error:', error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unexpected error' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      JSON.stringify({
+        category,
+        categoryLabel: categoryLabels[category] || category,
+        results,
+        totalFound: results.length,
+      }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  } catch (e) {
+    console.error("nearby-places error:", e);
+    return new Response(
+      JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });
